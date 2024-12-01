@@ -25,10 +25,10 @@ class CashCardController {
         this.cashCardRepository = cashCardRepository;
     }
 
-    @GetMapping(value = "/{id}")
-    public ResponseEntity<CashCard> findById(@PathVariable long id) {
+    @GetMapping(value = "/{requestedId}")
+    public ResponseEntity<CashCard> findById(@PathVariable Long requestedId) {
 
-        return cashCardRepository.findById(id)
+        return cashCardRepository.findById(requestedId)
                                  .map(ResponseEntity::ok)
                                  .orElseGet(() -> ResponseEntity.notFound().build());
     }
