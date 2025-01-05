@@ -21,7 +21,7 @@ class SecurityConfig {
         http.authorizeHttpRequests(request -> request.requestMatchers("/cashcards/**")
                                                      .hasRole("CARD-OWNER"))
             .httpBasic(Customizer.withDefaults())
-            .csrf(AbstractHttpConfigurer::disable);
+                .csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
 

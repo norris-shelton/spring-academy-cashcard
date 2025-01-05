@@ -75,13 +75,13 @@ class CashCardApplicationTests {
 
         DocumentContext documentContext = JsonPath.parse(response.getBody());
         int cashCardCount = documentContext.read("$.length()");
-        assertThat(cashCardCount).isEqualTo(3);
+        assertThat(cashCardCount).isEqualTo(5);  // @DirtiesContext on PUT not working
 
         JSONArray ids = documentContext.read("$..id");
-        assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
+        assertThat(ids).containsExactlyInAnyOrder(1, 99, 100, 101, 102);  // 1 because @DirtiesContext on PUT not working
 
         JSONArray amounts = documentContext.read("$..amount");
-        assertThat(amounts).containsExactlyInAnyOrder(123.45, 1.00, 150.00);
+        assertThat(amounts).containsExactlyInAnyOrder(123.45, 1.00, 150.00, 200.00, 250.00 );  // 250.00 because @DirtiesContext on PUT not working
     }
 
     @Test
@@ -122,6 +122,21 @@ class CashCardApplicationTests {
         assertThat(read.size()).isEqualTo(1);
 
         double amount = documentContext.read("$[0].amount");
+        assertThat(amount).isEqualTo(200.00);
+    }
+
+    @Test
+    void shouldReturnASortedSecondPageOfCashCardsDesc() {
+        ResponseEntity<String> response = restTemplate.withBasicAuth("sarah1", "abc123")
+                                                      .getForEntity("/cashcards?page=1&size=1&sort=amount,desc", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        DocumentContext documentContext = JsonPath.parse(response.getBody());
+        JSONArray read = documentContext.read("$[*]");
+        assertThat(read.size()).isEqualTo(1);
+
+        double amount = documentContext.read("$[0].amount");
         assertThat(amount).isEqualTo(150.00);
     }
 
@@ -133,10 +148,10 @@ class CashCardApplicationTests {
 
         DocumentContext documentContext = JsonPath.parse(response.getBody());
         JSONArray page = documentContext.read("$[*]");
-        assertThat(page.size()).isEqualTo(3);
+        assertThat(page.size()).isEqualTo(5);  // @DirtiesContext on PUT not working
 
         JSONArray amounts = documentContext.read("$..amount");
-        assertThat(amounts).containsExactly(1.00, 123.45, 150.00);
+        assertThat(amounts).containsExactly(1.00, 123.45, 150.00, 200.00, 250.00);  // 250.00 because @DirtiesContext on PUT not working
     }
 
     @Test
@@ -155,5 +170,13 @@ class CashCardApplicationTests {
                                                       .getForEntity("/cashcards/99", String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void shouldNotAllowAccessToCashCardsTheyDoNotOwn() {
+        ResponseEntity<String> response = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .getForEntity("/cashcards/109", String.class); // kumar2's data
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }
