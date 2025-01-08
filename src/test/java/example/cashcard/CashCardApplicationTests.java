@@ -17,7 +17,6 @@ import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DirtiesContext
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class CashCardApplicationTests {
 
@@ -50,7 +49,7 @@ class CashCardApplicationTests {
 
 
     @Test
-//    @DirtiesContext
+    @DirtiesContext
     void shouldCreateANewCashCard() {
         CashCard newCashCard = new CashCard(null, 250.00, "sarah1");
         ResponseEntity<Void> createResponse = restTemplate.withBasicAuth("sarah1", "abc123")
@@ -188,7 +187,7 @@ class CashCardApplicationTests {
     }
 
     @Test
-//    @DirtiesContext
+    @DirtiesContext
     void shouldUpdateAnExistingCashCard() {
         // update an existing object
         CashCard cashCardUpdate = new CashCard(null, 19.99, null);
@@ -209,4 +208,23 @@ class CashCardApplicationTests {
         assertThat(amount).isEqualTo(19.99);
         assertThat(owner).isEqualTo("sarah1");
     }
+
+    @Test
+    void shouldNotUpdateACashCardThatDoesNotExist() {
+        CashCard unknownCard = new CashCard(null, 19.99, null);
+        HttpEntity<CashCard> request = new HttpEntity<>(unknownCard);
+        ResponseEntity<Void> response = restTemplate.withBasicAuth("sarah1", "abc123")
+                                                    .exchange("/cashcards/99999", HttpMethod.PUT, request, Void.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotUpdateACashCardThatIsOwnedBySomeoneElse() {
+        CashCard kumarsCard = new CashCard(null, 333.33, null);
+        HttpEntity<CashCard> request = new HttpEntity<>(kumarsCard);
+        ResponseEntity<Void> response = restTemplate.withBasicAuth("sarah1", "abc123")
+                                                    .exchange("/cashcards/102", HttpMethod.PUT, request, Void.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
 }
